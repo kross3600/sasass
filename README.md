@@ -1,61 +1,82 @@
----------------------------->> Customization <<----------------------------
+-- Esse script deve ser um LocalScript dentro de StarterPlayerScripts ou StarterGui
 
-ExtendProjectory = true
-HitPositionVisible = true
-ShowCollisions = false
-Theme = "Bright Red" --[[
-Try "Bright red" for a red / black table, default is ""=Institutional white" 
-All themes: https://robloxapi.github.io/ref/type/BrickColor.html
---]]
+-- Variáveis de personalização
+local teamName = "Testers" -- Nome da equipe que pode ver o ESP
+local espEnabled = false -- ESP está desabilitado inicialmente
 
--------------------------------->> Code <<--------------------------------
------>> Do not edit below this line unless you know what you're doing <<-----
+-- Criando a interface (UI)
+local player = game.Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
-workspace.Tables.Table1.Table.BrickColor = BrickColor.new(Theme)
-workspace.Tables.Table1.Guides.HitPosition.Mesh.Scale = Vector3.new(0.5, 0, 0.5)
+-- Botão para ativar/desativar o ESP
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 200, 0, 50)
+toggleButton.Position = UDim2.new(0.5, -100, 0.9, -25)
+toggleButton.Text = "Ativar ESP"
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Parent = screenGui
 
-highlight = Instance.new("Highlight")
-highlight.FillTransparency = 0
-highlight.Parent = workspace.Tables.Table1.Guides.HitPosition
-highlight.Enabled = false
-
-if ShowCollisions == true then
-
-    for i, collision in pairs(workspace.Tables.Table1.Collision:GetDescendants()) do
-        if collision:IsA("BasePart") then
-            collision.Transparency = 0
+-- Função para ativar ou desativar o ESP
+toggleButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    toggleButton.Text = espEnabled and "Desativar ESP" or "Ativar ESP"
+    if not espEnabled then
+        -- Limpar todos os ESPs ao desativar
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("ESP") then
+                player.Character.ESP:Destroy()
+            end
         end
     end
-    
-else
-    
-    for i, collision in pairs(workspace.Tables.Table1.Collision:GetDescendants()) do
-        if collision:IsA("BasePart") then
-            collision.Transparency = 1
+end)
+
+-- Função para aplicar o ESP aos jogadores
+game.Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(character)
+        -- Só adiciona o ESP se o script estiver ativado e o jogador estiver na equipe certa
+        if espEnabled and player.Team and player.Team.Name == teamName then
+            -- Criando a Highlight para o jogador
+            local esp = Instance.new("Highlight")
+            esp.Parent = character
+            esp.FillColor = Color3.fromRGB(255, 0, 0)  -- Cor do ESP (vermelho)
+            esp.OutlineColor = Color3.fromRGB(0, 0, 0)  -- Cor do contorno
+            esp.OutlineTransparency = 0  -- Transparência do contorno
+            esp.FillTransparency = 0.5  -- Transparência do preenchimento
+            esp.Name = "ESP"  -- Damos um nome para o Highlight, assim podemos removê-lo depois
+
+            -- Adicionando a Highlight à parte do corpo do personagem
+            for _, part in pairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    local partHighlight = esp:Clone()
+                    partHighlight.Parent = part
+                end
+            end
+        end
+    end)
+end)
+
+-- Verifique se o jogador tem um personagem e adicione o ESP se necessário
+for _, player in pairs(game.Players:GetPlayers()) do
+    if player.Character then
+        -- Se o jogador estiver na equipe certa e o ESP estiver ativado, aplicamos
+        if espEnabled and player.Team and player.Team.Name == teamName then
+            local esp = Instance.new("Highlight")
+            esp.Parent = player.Character
+            esp.FillColor = Color3.fromRGB(255, 0, 0)  -- Cor do ESP
+            esp.OutlineColor = Color3.fromRGB(0, 0, 0)
+            esp.OutlineTransparency = 0
+            esp.FillTransparency = 0.5
+            esp.Name = "ESP"
+
+            -- Aplica o Highlight a todas as partes do corpo
+            for _, part in pairs(player.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    local partHighlight = esp:Clone()
+                    partHighlight.Parent = part
+                end
+            end
         end
     end
-end
-
-if ExtendProjectory == true then
-    
-    workspace.Tables.Table1.Guides.HitTrajectory.Mesh.Scale = Vector3.new(0.5, 0, 12)
-    workspace.Tables.Table1.Guides.HitTrajectory.Mesh.Offset = Vector3.new(0, 0.12, -6)
-    
-else
-    
-    workspace.Tables.Table1.Guides.HitTrajectory.mesh.Scale = Vector3.new(0.5, 0, 1)
-    workspace.Tables.Table1.Guides.HitTrajectory.Mesh.Offset = Vector3.new(0, 0.12, -0.4)
-    
-end
-
-if HitPositionVisible == true then
-    
-    workspace.Tables.Table1.Guides.HitPosition.Transparency = 0
-    highlight.Enabled = true
-    
-else
-    
-    workspace.Tables.Table1.Guides.HitPosition.Transparency = 1
-    highlight.Enabled = false
-    
 end
